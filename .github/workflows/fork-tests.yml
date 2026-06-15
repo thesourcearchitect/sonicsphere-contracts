@@ -1,0 +1,54 @@
+name: Fork Tests
+
+# Runs against real Base Sepolia state.
+# Triggered manually or on a nightly schedule.
+# Requires BASE_SEPOLIA_RPC_URL secret in the repository.
+on:
+  schedule:
+    - cron: "0 4 * * *"   # 04:00 UTC every night
+  workflow_dispatch:        # manual trigger
+
+env:
+  FOUNDRY_PROFILE: default
+
+jobs:
+  fork:
+    name: Base Sepolia Fork
+    runs-on: ubuntu-latest
+    # Skip if the secret is not configured (forks / OSS contributors)
+    if: ${{ secrets.BASE_SEPOLIA_RPC_URL != '' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Build contracts
+        run: forge build
+
+      - name: Run fork tests (Base Sepolia)
+        env:
+          BASE_SEPOLIA_RPC_URL: ${{ secrets.BASE_SEPOLIA_RPC_URL }}
+        run: |
+          forge test \
+            --match-contract LiquidityVaultFork \
+            --fork-url "$BASE_SEPOLIA_RPC_URL" \
+            -vvv
+
+      - name: Run fork tests against deployed vault (if address set)
+        if: ${{ secrets.VAULT_ADDRESS != '' }}
+        env:
+          BASE_SEPOLIA_RPC_URL: ${{ secrets.BASE_SEPOLIA_RPC_URL }}
+          VAULT_ADDRESS: ${{ secrets.VAULT_ADDRESS }}
+        run: |
+          forge test \
+            --match-contract LiquidityVaultFork \
+            --match-test "test_Fork_ContractDeployed|test_Fork_ViewFunctions|test_Fork_IsSettled|test_Fork_VaultBalance" \
+            --fork-url "$BASE_SEPOLIA_RPC_URL" \
+            -vvv

@@ -1,0 +1,31 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# forge coverage configuration
+# These settings extend foundry.toml specifically for coverage runs.
+# Run via: forge coverage --config-path .foundry-coverage.toml
+# Or use the Makefile targets: make coverage | make coverage-lcov | make coverage-html
+# ──────────────────────────────────────────────────────────────────────────────
+
+[profile.coverage]
+# Inherit all settings from the default profile
+src      = "src"
+out      = "out"
+libs     = ["lib"]
+test     = "test"
+script   = "script"
+optimizer = true
+optimizer_runs = 200
+solc     = "0.8.25"
+evm_version = "cancun"
+
+# ── Coverage-specific settings ────────────────────────────────────────────────
+
+# Exclude auto-generated files and lib code from coverage metrics
+no_match_path = "lib/**"
+
+# Include all source contracts
+match_path = "src/**"
+
+# Report formats supported:
+#   summary  — printed to stdout (make coverage)
+#   lcov     — machine-readable, compatible with Codecov/Coveralls (make coverage-lcov)
+#   html     — human-readable (make coverage-html, requires genhtml)

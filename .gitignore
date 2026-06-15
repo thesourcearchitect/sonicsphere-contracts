@@ -1,0 +1,15 @@
+# Foundry build artefacts
+out/
+cache/
+broadcast/**/dry-run/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Editor
+.DS_Store
+.idea/
+.vscode/
+*.swp

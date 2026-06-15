@@ -1,0 +1,29 @@
+# Slither static analysis configuration for LiquidityVault
+# Run: slither . (from the repo root)
+# Requires: pip install slither-analyzer
+
+[slither]
+
+# Only analyse the production contract (not scripts or tests)
+filter_paths = "script,test,lib"
+
+# Detectors to exclude — each has a documented rationale below:
+#
+#   timestamp         — block.timestamp is used only for the 24h rolling cap window
+#                       reset. Validator manipulation is bounded to ~15s on Base and
+#                       cannot meaningfully affect a 24h window. Accepted risk.
+#
+#   divide-before-multiply — no division in LiquidityVault.sol; may fire on OZ base
+#                           contracts (trusted upstream).
+#
+#   incorrect-equality     — all equality checks are intentional (bytes32 hash lookup,
+#                           bool flag checks). Not a vulnerability in this context.
+exclude_detectors = ["timestamp", "divide-before-multiply", "incorrect-equality"]
+
+# Report everything from high to informational
+# (remove "informational" to reduce noise during audits)
+detectors_to_run = ["high", "medium", "low", "informational"]
+
+# Solc settings must match foundry.toml
+solc = "solc"
+solc_args = "--optimize --optimize-runs 200 --evm-version cancun"
