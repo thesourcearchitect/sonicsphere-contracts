@@ -32,7 +32,7 @@ contract TransferAdmin is Script {
         _execute(vaultAddr, newAdmin);
     }
 
-    function run(address vaultAddr, address newAdmin) external {
+    function runAt(address vaultAddr, address newAdmin) external {
         _execute(vaultAddr, newAdmin);
     }
 

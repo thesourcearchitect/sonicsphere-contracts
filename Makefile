@@ -167,7 +167,7 @@ verify-mainnet: ## Verify deployed vault on Base mainnet (requires VAULT_ADDRESS
 
 .PHONY: set-risk-sepolia
 set-risk-sepolia: ## Update txLimit + dailyCap on Base Sepolia (requires VAULT_ADDRESS, TX_LIMIT, DAILY_CAP)
-	$(FORGE) script script/SetRiskParams.s.sol \
+	@$(FORGE) script script/SetRiskParams.s.sol \
           --rpc-url $(BASE_SEPOLIA_RPC_URL) \
           --private-key $(DEPLOYER_PRIVATE_KEY) \
           --broadcast \
@@ -175,7 +175,7 @@ set-risk-sepolia: ## Update txLimit + dailyCap on Base Sepolia (requires VAULT_A
 
 .PHONY: set-risk-mainnet
 set-risk-mainnet: ## Update txLimit + dailyCap on Base mainnet (requires VAULT_ADDRESS, TX_LIMIT, DAILY_CAP)
-	$(FORGE) script script/SetRiskParams.s.sol \
+	@$(FORGE) script script/SetRiskParams.s.sol \
           --rpc-url $(BASE_MAINNET_RPC_URL) \
           --private-key $(DEPLOYER_PRIVATE_KEY) \
           --broadcast \
@@ -183,7 +183,7 @@ set-risk-mainnet: ## Update txLimit + dailyCap on Base mainnet (requires VAULT_A
 
 .PHONY: pause-sepolia
 pause-sepolia: ## Emergency pause on Base Sepolia (requires VAULT_ADDRESS)
-	$(FORGE) script script/EmergencyPause.s.sol \
+	@$(FORGE) script script/EmergencyPause.s.sol \
           --rpc-url $(BASE_SEPOLIA_RPC_URL) \
           --private-key $(DEPLOYER_PRIVATE_KEY) \
           --broadcast \
@@ -192,7 +192,7 @@ pause-sepolia: ## Emergency pause on Base Sepolia (requires VAULT_ADDRESS)
 
 .PHONY: unpause-sepolia
 unpause-sepolia: ## Unpause on Base Sepolia (requires VAULT_ADDRESS)
-	$(FORGE) script script/EmergencyPause.s.sol \
+	@$(FORGE) script script/EmergencyPause.s.sol \
           --rpc-url $(BASE_SEPOLIA_RPC_URL) \
           --private-key $(DEPLOYER_PRIVATE_KEY) \
           --broadcast \
@@ -215,7 +215,7 @@ status-mainnet: ## Print vault status on Base mainnet (read-only, requires VAULT
 
 .PHONY: fund-sepolia
 fund-sepolia: ## Fund the vault on Base Sepolia (requires VAULT_ADDRESS, FUND_AMOUNT)
-	$(FORGE) script script/FundVault.s.sol \
+	@$(FORGE) script script/FundVault.s.sol \
           --rpc-url $(BASE_SEPOLIA_RPC_URL) \
           --private-key $(DEPLOYER_PRIVATE_KEY) \
           --broadcast \
@@ -223,7 +223,7 @@ fund-sepolia: ## Fund the vault on Base Sepolia (requires VAULT_ADDRESS, FUND_AM
 
 .PHONY: fund-mainnet
 fund-mainnet: ## Fund the vault on Base mainnet (requires VAULT_ADDRESS, FUND_AMOUNT)
-	$(FORGE) script script/FundVault.s.sol \
+	@$(FORGE) script script/FundVault.s.sol \
           --rpc-url $(BASE_MAINNET_RPC_URL) \
           --private-key $(DEPLOYER_PRIVATE_KEY) \
           --broadcast \
@@ -231,7 +231,7 @@ fund-mainnet: ## Fund the vault on Base mainnet (requires VAULT_ADDRESS, FUND_AM
 
 .PHONY: cancel-refs-sepolia
 cancel-refs-sepolia: ## Cancel refs on Base Sepolia (requires VAULT_ADDRESS, CANCEL_REFS)
-	$(FORGE) script script/CancelRefs.s.sol \
+	@$(FORGE) script script/CancelRefs.s.sol \
           --rpc-url $(BASE_SEPOLIA_RPC_URL) \
           --private-key $(DEPLOYER_PRIVATE_KEY) \
           --broadcast \
@@ -239,7 +239,7 @@ cancel-refs-sepolia: ## Cancel refs on Base Sepolia (requires VAULT_ADDRESS, CAN
 
 .PHONY: rescue-sepolia
 rescue-sepolia: ## Emergency ETH rescue on Base Sepolia (requires VAULT_ADDRESS, RESCUE_TARGET)
-	$(FORGE) script script/RescueEth.s.sol \
+	@$(FORGE) script script/RescueEth.s.sol \
           --rpc-url $(BASE_SEPOLIA_RPC_URL) \
           --private-key $(DEPLOYER_PRIVATE_KEY) \
           --broadcast \
@@ -247,7 +247,7 @@ rescue-sepolia: ## Emergency ETH rescue on Base Sepolia (requires VAULT_ADDRESS,
 
 .PHONY: transfer-admin-sepolia
 transfer-admin-sepolia: ## Transfer admin role on Base Sepolia (requires VAULT_ADDRESS, NEW_ADMIN)
-	$(FORGE) script script/TransferAdmin.s.sol \
+	@$(FORGE) script script/TransferAdmin.s.sol \
           --rpc-url $(BASE_SEPOLIA_RPC_URL) \
           --private-key $(DEPLOYER_PRIVATE_KEY) \
           --broadcast \
@@ -259,14 +259,14 @@ transfer-admin-sepolia: ## Transfer admin role on Base Sepolia (requires VAULT_A
 
 .PHONY: deploy-sepolia
 deploy-sepolia: ## Deploy LiquidityVault to Base Sepolia (dry run by default)
-	$(FORGE) script script/Deploy.s.sol \
+	@$(FORGE) script script/Deploy.s.sol \
           --rpc-url $(BASE_SEPOLIA_RPC_URL) \
           --private-key $(DEPLOYER_PRIVATE_KEY) \
           $(V)
 
 .PHONY: deploy-sepolia-broadcast
 deploy-sepolia-broadcast: ## Deploy + broadcast + verify on Base Sepolia
-	$(FORGE) script script/Deploy.s.sol \
+	@$(FORGE) script script/Deploy.s.sol \
           --rpc-url $(BASE_SEPOLIA_RPC_URL) \
           --private-key $(DEPLOYER_PRIVATE_KEY) \
           --broadcast \
@@ -279,7 +279,7 @@ deploy-sepolia-broadcast: ## Deploy + broadcast + verify on Base Sepolia
 
 .PHONY: deploy-mainnet
 deploy-mainnet: ## Deploy LiquidityVault to Base mainnet (dry run — review first!)
-	$(FORGE) script script/Deploy.s.sol \
+	@$(FORGE) script script/Deploy.s.sol \
           --rpc-url $(BASE_MAINNET_RPC_URL) \
           --private-key $(DEPLOYER_PRIVATE_KEY) \
           $(V)
@@ -288,7 +288,7 @@ deploy-mainnet: ## Deploy LiquidityVault to Base mainnet (dry run — review fir
 deploy-mainnet-broadcast: ## Deploy + broadcast + verify on Base mainnet (PRODUCTION)
 	@echo "⚠  MAINNET DEPLOYMENT — confirm with CTRL-C to abort, ENTER to continue"
 	@read _
-	$(FORGE) script script/Deploy.s.sol \
+	@$(FORGE) script script/Deploy.s.sol \
           --rpc-url $(BASE_MAINNET_RPC_URL) \
           --private-key $(DEPLOYER_PRIVATE_KEY) \
           --broadcast \

@@ -11,7 +11,7 @@ import {LiquidityVault}   from "../src/LiquidityVault.sol";
 ///           forge script script/SetRiskParams.s.sol \
 ///             --rpc-url <rpc>                        \
 ///             --broadcast                            \
-///             --sig "run(address,uint256,uint256)"   \
+///             --sig "runAt(address,uint256,uint256)"   \
 ///             <VAULT_ADDRESS> <TX_LIMIT_WEI> <DAILY_CAP_WEI>
 ///
 ///         Or use the env-var variant:
@@ -32,7 +32,7 @@ contract SetRiskParams is Script {
     }
 
     // Entry point B: pass values as script args
-    function run(address vault, uint256 txLimit, uint256 dailyCap) external {
+    function runAt(address vault, uint256 txLimit, uint256 dailyCap) external {
         _execute(vault, txLimit, dailyCap);
     }
 

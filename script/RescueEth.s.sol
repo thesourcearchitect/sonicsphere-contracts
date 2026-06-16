@@ -34,7 +34,7 @@ contract RescueEth is Script {
         _execute(vaultAddr, target, amount);
     }
 
-    function run(address vaultAddr, address payable target, uint256 amount) external {
+    function runAt(address vaultAddr, address payable target, uint256 amount) external {
         _execute(vaultAddr, target, amount);
     }
 

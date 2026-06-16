@@ -1,7 +1,7 @@
 # Foundry build artefacts
 out/
 cache/
-broadcast/**/dry-run/
+broadcast/
 
 # Environment
 .env

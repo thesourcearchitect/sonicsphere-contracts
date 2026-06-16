@@ -16,7 +16,7 @@ import {LiquidityVault}   from "../src/LiquidityVault.sol";
 ///         Or pass values as args:
 ///           forge script script/FundVault.s.sol \
 ///             --rpc-url base_sepolia --broadcast \
-///             --sig "run(address,uint256)" <VAULT_ADDRESS> <AMOUNT_WEI>
+///             --sig "runAt(address,uint256)" <VAULT_ADDRESS> <AMOUNT_WEI>
 ///
 ///         Security note: ensure the target vault address and amount are
 ///         confirmed via VerifyDeployment.s.sol before funding production.
@@ -30,7 +30,7 @@ contract FundVault is Script {
     }
 
     // Entry point B: script args
-    function run(address vault, uint256 amount) external {
+    function runAt(address vault, uint256 amount) external {
         _execute(vault, amount);
     }
 

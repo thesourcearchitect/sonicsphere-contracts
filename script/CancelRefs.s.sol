@@ -9,7 +9,7 @@ import {LiquidityVault}   from "../src/LiquidityVault.sol";
 ///
 /// @dev    The broadcaster must hold GUARDIAN_ROLE on the target vault.
 ///         Refs are passed as a comma-separated hex list via the
-///         CANCEL_REFS env var, or individually via the run(address,bytes32[])
+///         CANCEL_REFS env var, or individually via the runAt(address,bytes32[])
 ///         overload when called programmatically.
 ///
 ///         Usage (single ref):
@@ -34,7 +34,7 @@ contract CancelRefs is Script {
     }
 
     // Entry point: pass refs directly (for scripting / programmatic use)
-    function run(address vaultAddr, bytes32[] calldata refs) external {
+    function runAt(address vaultAddr, bytes32[] calldata refs) external {
         _execute(vaultAddr, refs);
     }
 
