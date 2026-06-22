@@ -24,6 +24,33 @@ All scripts run from the `sonicsphere-contracts/` directory.
 
 ---
 
+## Deployed addresses (Base Sepolia, chainId 84532)
+
+| Contract | Address | Verified on Basescan |
+| --- | --- | --- |
+| `LiquidityVault` | `0x75d56B48b3aF6d2DD1D0B15C04e166ed852A8f26` | yes |
+| `ProtocolAccount` (ERC-4337 v0.7) | `0x58d291a766Ae60D47FAb33686C51853F5020967A` | yes |
+| Canonical EntryPoint v0.7 | `0x0000000071727De22E5E9d8BAf0edAc6f37da032` | n/a (standard singleton) |
+
+- **Public KMS signer** (authorized UserOp signer, `ProtocolAccount.kmsSigner()`): `0x726ee8188e4FC685d849EEC7ba56879F92234C85`. Public address only — the private key is held in the operator's KMS and never leaves it; it is never used for admin actions.
+- **ABIs:** run `forge build`, then read the `abi` field of `out/LiquidityVault.sol/LiquidityVault.json` and `out/ProtocolAccount.sol/ProtocolAccount.json`. Both contracts are source-verified on Basescan, so the ABI is also downloadable from the explorer.
+- The `ProtocolAccount` is the **sole** holder of the vault's `RELAYER_ROLE`. The deploy-time bootstrap relayer — the KMS signer EOA `0x726ee8188e4FC685d849EEC7ba56879F92234C85`, set as the vault's initial `relayer` in the constructor — initially also held `RELAYER_ROLE`, but the admin has since **revoked** it (tx `0x981e3d1294e543f8e65d7e9dc329e29667820d47fc38786f3b316fb6493fabc8`); `hasRole(RELAYER_ROLE, 0x726ee8…)` is now `false`. See §4.1 for the rotation/revoke procedure.
+
+### Smoke-test infrastructure (Alto local bundler)
+
+`e2e/smoke-testnet.mjs` runs a local Alto bundler against live Base Sepolia. It needs four standard Pimlico/EntryPoint **simulation** helper contracts, pre-deployed once via the canonical CREATE2 factory (`0x4e59b44847b379578588920cA78FbF26c0B4956C`); they persist on-chain, so re-runs detect and skip them:
+
+| Helper | Address |
+| --- | --- |
+| `PimlicoSimulations` | `0x2451358f0D2eaE6e3a5398FD8519736c120D36D1` |
+| `EntryPointSimulations` 0.7 | `0x862859BCB9bAF6413D90b34C7807241A8380FfC4` |
+| `EntryPointSimulations` 0.8 | `0x58b519eaEb079ED23dfAA29D6a367b968fe51272` |
+| `EntryPointSimulations` 0.9 | `0x5b5A936AD8F0467f1a20260a9462C887B7F8C07B` |
+
+These are bundler infrastructure, **not** SonicSphere protocol contracts. The smoke test reuses a persisted utility key (`e2e/.alto-utility-key`, gitignored) so the CREATE2 salt — and therefore these addresses — stay stable across runs.
+
+---
+
 ## 1. Initial deployment
 
 ### 1.1 Deploy to Base Sepolia (testnet)
@@ -65,15 +92,17 @@ make status-sepolia
 
 ### 1.4 Enable the relayer
 
-The relayer already holds `RELAYER_ROLE` from the constructor. No extra step is needed unless the role was revoked.
+For a fresh deploy the constructor grants `RELAYER_ROLE` to the address passed as `relayer`. In the **Phase 2 / live Base Sepolia** setup the on-chain relayer is the **`ProtocolAccount`** smart account (`0x58d291a766Ae60D47FAb33686C51853F5020967A`), granted via `GrantRelayer.s.sol`; the KMS owner key only **signs** UserOps — it is not itself the relayer.
 
 ```bash
-# Confirm relayer role
+# Confirm the ProtocolAccount holds RELAYER_ROLE
 cast call $VAULT_ADDRESS "hasRole(bytes32,address)(bool)" \
-  $(cast keccak "RELAYER_ROLE") $RELAYER_ADDRESS \
+  $(cast keccak "RELAYER_ROLE") 0x58d291a766Ae60D47FAb33686C51853F5020967A \
   --rpc-url $BASE_SEPOLIA_RPC_URL
 # Expected: true
 ```
+
+> **Cleanup note (resolved):** the deploy-time bootstrap relayer (the KMS signer EOA `0x726ee8188e4FC685d849EEC7ba56879F92234C85`) initially held `RELAYER_ROLE` because `GrantRelayer.s.sol` was first run without `OLD_RELAYER_ADDRESS`. The admin has since revoked it (tx `0x981e3d1294e543f8e65d7e9dc329e29667820d47fc38786f3b316fb6493fabc8`), so the `ProtocolAccount` is now the only authorized relayer.
 
 ### 1.5 Smoke-test a settlement
 
@@ -214,29 +243,32 @@ forge script script/EmergencyPause.s.sol \
 
 ## 4. Key rotation
 
-### 4.1 Rotate relayer key
+### 4.1 Rotate the relayer (KMS key)
 
-1. Deploy the new KMS relayer key (off-chain step).
-2. Grant `RELAYER_ROLE` to the new EOA (requires `DEFAULT_ADMIN_ROLE`):
+The relayer is the `ProtocolAccount` smart account, and its `kmsSigner` is **immutable** — there is no setter. Rotating the KMS key therefore means **redeploying** the account and re-pointing the vault at it. Every admin step is signed by `DEFAULT_ADMIN_ROLE` (the timelock/multisig) — **never** the KMS key.
 
-```bash
-cast send $VAULT_ADDRESS \
-  "grantRole(bytes32,address)" \
-  $(cast keccak "RELAYER_ROLE") $NEW_RELAYER_ADDRESS \
-  --private-key $ADMIN_PRIVATE_KEY \
-  --rpc-url $BASE_MAINNET_RPC_URL
-```
-
-3. Confirm new relayer is active.
-4. Revoke `RELAYER_ROLE` from the old EOA:
+1. Provision the new KMS key (off-chain) and note its **public** address.
+2. Deploy a new `ProtocolAccount` with the new signer:
 
 ```bash
-cast send $VAULT_ADDRESS \
-  "revokeRole(bytes32,address)" \
-  $(cast keccak "RELAYER_ROLE") $OLD_RELAYER_ADDRESS \
-  --private-key $ADMIN_PRIVATE_KEY \
-  --rpc-url $BASE_MAINNET_RPC_URL
+KMS_SIGNER_ADDRESS=0x<new-public-address> \
+  forge script script/DeployProtocolAccount.s.sol \
+  --rpc-url base_sepolia --broadcast --verify -vvvv
 ```
+
+3. Grant `RELAYER_ROLE` to the new account **and revoke the old one** in a single run:
+
+```bash
+VAULT_ADDRESS=0x... \
+PROTOCOL_ACCOUNT_ADDRESS=0x<new-account> \
+OLD_RELAYER_ADDRESS=0x<old-account> \
+  forge script script/GrantRelayer.s.sol \
+  --rpc-url base_sepolia --broadcast -vvvv
+```
+
+4. Confirm: the new account has `RELAYER_ROLE` and the old account does not.
+
+> If a raw EOA was ever granted `RELAYER_ROLE` directly (e.g. the deploy-time bootstrap relayer `0x726ee8188e4FC685d849EEC7ba56879F92234C85`), revoke it the same way — set `OLD_RELAYER_ADDRESS` to that EOA, or call `revokeRole(RELAYER_ROLE, <eoa>)` from the admin.
 
 ### 4.2 Rotate guardian key
 

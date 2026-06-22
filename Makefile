@@ -20,7 +20,7 @@ V ?= -vvv
 
 .PHONY: help
 help: ## Show this help message
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
           awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}' | \
           sort
 
@@ -352,3 +352,11 @@ abi: ## Extract and pretty-print the LiquidityVault ABI
 .PHONY: storage
 storage: ## Inspect the LiquidityVault storage layout
 	$(FORGE) inspect LiquidityVault storage-layout --pretty
+
+# ──────────────────────────────────────────────────────────────────────────────
+# E2E — bundler-in-the-loop (local Anvil fork; free, no deploys)
+# ──────────────────────────────────────────────────────────────────────────────
+
+.PHONY: e2e
+e2e: build ## Run the bundler-in-the-loop E2E (Anvil fork + Alto + UserOps); needs BASE_SEPOLIA_RPC_URL
+	@cd e2e && { [ -d node_modules ] || pnpm install --ignore-workspace --prefer-offline; } && node run.mjs

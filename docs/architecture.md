@@ -1,4 +1,4 @@
-# Architecture — SonicSphere Phase 1
+# Architecture — SonicSphere (Phase 1 & Phase 2)
 
 ## Overview
 
@@ -165,12 +165,44 @@ Run `make test-gas` for the current full gas report.
 
 ---
 
-## Phase 2 considerations (out of scope for Phase 1)
+## Phase 2 — ERC-4337 settlement account
 
-Phase 2 will add ERC-20 support (USDC, ETH-pegged stablecoins). Key decisions deferred:
+Phase 2 introduces `ProtocolAccount.sol`, a minimal ERC-4337 v0.7 smart account that holds the Vault's `RELAYER_ROLE`. **The Phase 1 Vault is unchanged**; the account is integrated solely by a role grant.
+
+### Why account abstraction for the relayer?
+
+The off-chain KMS relayer previously had to be an EOA that managed its own gas and nonce. Routing settlements through a smart account + the canonical EntryPoint:
+- Separates the **signing** key (KMS) from on-chain gas/nonce bookkeeping (the EntryPoint handles nonces, prefund and batching).
+- Gives the relayer a single, auditable on-chain identity whose authorization on the Vault can be rotated without changing the Vault.
+- Keeps the hot path's authorization model intact: the account is just another `RELAYER_ROLE` holder, bounded by the same `txLimit` / `dailyCap`.
+
+### Minimal-surface design
+
+`ProtocolAccount` extends eth-infinitism's audited `BaseAccount` and overrides only `_validateSignature`:
+- One immutable signer (`kmsSigner`, a public address). No factory, proxy, or owner machinery — there is exactly one account.
+- `execute(dest, value, func)` is callable **only** by the EntryPoint and bubbles the target's revert verbatim, so the Vault's idempotency/cap/pause errors remain legible to the off-chain reconciler.
+- The contract is non-custodial: it never holds or requests any user key.
+
+### Validation & replay safety
+
+`_validateSignature` recovers the signer from `userOpHash` (which the EntryPoint already binds to the chain id and its own address), so a signed op cannot be replayed on another chain or EntryPoint. A wrong signer returns the AA `SIG_VALIDATION_FAILED` sentinel (no revert), as required for clean bundler simulation.
+
+### Key rotation = redeploy
+
+`kmsSigner` is immutable. Rotating the KMS key means deploying a fresh `ProtocolAccount` and, under `DEFAULT_ADMIN_ROLE` (timelock/multisig — never the KMS key), granting `RELAYER_ROLE` to the new account and revoking the old one. This mirrors the Phase 1 "redeploy rather than upgrade" philosophy.
+
+### Staged testing & the bundler caveat
+
+Tests run in stages: (1) local-EntryPoint unit tests, (2) a fork test against the real EntryPoint singleton, (3) bundler-in-the-loop (external infra), (4) testnet deploy. Stages 1–2 drive `handleOps()` directly and therefore **skip the ERC-7562 op-validation rules** a real bundler enforces — a green local run is necessary but not sufficient for bundler acceptance; stage 3 closes that gap.
+
+---
+
+## Later phases — ERC-20 support (out of scope here)
+
+A later phase will add ERC-20 support (USDC, ETH-pegged stablecoins). Key decisions deferred:
 - Whether to use a single vault with a token whitelist or separate per-token vaults
 - Whether to add a fee capture mechanism
 - Whether to introduce a Chainlink price feed for fiat-to-token conversion
 - Whether to use OpenZeppelin's `SafeERC20` (expected: yes)
 
-The Phase 1 contract is intentionally incompatible with Phase 2 ERC-20 logic. A new contract will be deployed rather than upgrading.
+The Phase 1 contract is intentionally incompatible with the ERC-20 logic. A new contract will be deployed rather than upgrading.

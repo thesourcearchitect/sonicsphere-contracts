@@ -1,0 +1,15 @@
+{
+  "name": "sonicsphere-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Stage 3 bundler-in-the-loop E2E harness for SonicSphere ProtocolAccount + LiquidityVault (local anvil fork + Alto bundler).",
+  "scripts": {
+    "test": "node run.mjs",
+    "smoke:testnet": "node smoke-testnet.mjs"
+  },
+  "devDependencies": {
+    "@pimlico/alto": "^0.0.20",
+    "viem": "^2.53.1"
+  }
+}

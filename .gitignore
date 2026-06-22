@@ -13,3 +13,10 @@ broadcast/
 .idea/
 .vscode/
 *.swp
+
+# E2E harness (Node)
+e2e/node_modules/
+e2e/.anvil.log
+e2e/.alto.log
+e2e/.smoke-result.txt
+e2e/.alto-utility-key
